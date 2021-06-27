@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebook, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import { UserContext } from "../../App";
+import { useForm } from "react-hook-form";
 
 if (firebase.apps.length === 0) {
   firebase.initializeApp(firebaseConfig);
@@ -16,56 +17,42 @@ const LoginForm = () => {
   const history = useHistory();
   const location = useLocation();
   let { from } = location.state || { from: { pathname: "/" } };
-
   const [user, setUser] = useState({
     isSignedIn: false,
     name: "",
     email: "",
     password: "",
   });
-  const handleLogin = (e) => {
-    if (user.email && user.password) {
-      firebase
-        .auth()
-        .signInWithEmailAndPassword(user.email, user.password)
-        .then((res) => {
-          const { displayName, email } = res.user;
-          const signedInUser = {
-            isSignedIn: true,
-            name: displayName,
-            email: email,
-          };
-          setUser(signedInUser);
-          setLoggedInUser(signedInUser);
-          history.replace(from);
-        })
-        .catch((error) => {
-          console.log(error);
-          console.log(error.message);
-        });
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-    e.preventDefault();
+  const onSubmit = (data) => {
+    console.log(data);
+    firebase
+      .auth()
+      .signInWithEmailAndPassword(data.email, data.password)
+      .then((res) => {
+        console.log(res);
+        const { displayName, email } = res.user;
+        const signedInUser = {
+          isSignedIn: true,
+          name: displayName,
+          email: email,
+        };
+        setUser(signedInUser);
+        setLoggedInUser(signedInUser);
+        history.replace(from);
+      })
+      .catch((error) => {
+        console.log(error);
+        console.log(error.message);
+      });
   };
 
-  // Form Validation
-  const handleBlur = (e) => {
-    let isFieldValid = true;
-    if (e.target.name === "email") {
-      isFieldValid = /\S+@\S+\.\S+/.test(e.target.value);
-    }
-    if (e.target.name === "password") {
-      const isPasswordValid = e.target.value.length > 6;
-      const passwordHasNumber = /\d{1}/.test(e.target.value);
-      isFieldValid = isPasswordValid && passwordHasNumber;
-    }
-    if (isFieldValid) {
-      const newUserInfo = { ...user };
-      newUserInfo[e.target.name] = e.target.value;
-      setUser(newUserInfo);
-    }
-  }; // Form Validation Close
-
+  // Google Authentication
   const handleGoogleAuth = () => {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     firebase
@@ -78,7 +65,7 @@ const LoginForm = () => {
           name: displayName,
           email: email,
         };
-        setUser(signedInUser);
+
         setLoggedInUser(signedInUser);
         history.replace(from);
       })
@@ -87,6 +74,7 @@ const LoginForm = () => {
         console.log(err.message);
       });
   };
+  // Facebook Authentication
   const handleFacebookAuth = () => {
     const facebookProvider = new firebase.auth.FacebookAuthProvider();
     firebase
@@ -99,7 +87,6 @@ const LoginForm = () => {
           name: displayName,
           email: email,
         };
-        setUser(signedInUser);
         setLoggedInUser(signedInUser);
         history.replace(from);
       })
@@ -116,27 +103,56 @@ const LoginForm = () => {
           <div className="col-sm-6 col-md-4">
             <div className="form_card round shadow-lg">
               <h3 className="mb-4">Log In</h3>
-              <form onSubmit={handleLogin} className="w-75 p-2">
-                {/* {user.error && <p style={{ color: "red" }}>{user.error}</p>} */}
+              <form onSubmit={handleSubmit(onSubmit)} className="w-75 p-2">
                 <div className="mb-3">
                   <input
-                    type="text"
+                    type="email"
+                    id="email"
                     name="email"
-                    onBlur={handleBlur}
+                    placeholder="name@example.com"
                     className="form-control rounded-pill"
-                    placeholder="Your Email address"
-                    required
+                    {...register("email", {
+                      required: "required",
+                      pattern: {
+                        value: /\S+@\S+\.\S+/,
+                        message: "Entered value does not match email format",
+                      },
+                    })}
+                    defaultValue={loggedInUser.email}
                   />
+                  {errors.email && (
+                    <span
+                      style={{ color: "red", fontSize: "12px" }}
+                      role="alert"
+                    >
+                      {errors.email.message}
+                    </span>
+                  )}
                 </div>
                 <div className="mb-3">
                   <input
                     type="password"
+                    id="password"
                     name="password"
-                    onBlur={handleBlur}
+                    placeholder="H2Gi)mRp*vg^"
                     className="form-control rounded-pill"
-                    placeholder="Your Password"
-                    required
+                    {...register("password", {
+                      required: "required",
+                      pattern: {
+                        value:
+                          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{8,30}$/,
+                        message: "Password didn't match)",
+                      },
+                    })}
                   />
+                  {errors.password && (
+                    <span
+                      style={{ color: "red", fontSize: "12px" }}
+                      role="alert"
+                    >
+                      {errors.password.message}
+                    </span>
+                  )}
                 </div>
                 <div className="mb-2 d-flex justify-content-between">
                   <div className="mb-3 form-check">

@@ -8,7 +8,8 @@
   color: white;
 }
 .form_card {
-  min-height: 480px;
+  min-height: 520px;
+  padding: 2rem 0;
   display: flex;
   flex-direction: column;
   align-items: center;

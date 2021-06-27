@@ -29,16 +29,17 @@ const Navbar = () => {
                   Home
                 </NavLink>
               </li>
-              <li className="nav-item">
-                <NavLink className="nav-link" to="/login">
-                  Log in
-                </NavLink>
-              </li>
-              <li className="nav-item">
-                <NavLink className="nav-link" to="/signup">
-                  Sign up
-                </NavLink>
-              </li>
+              {loggedInUser.email ? (
+                <button type="button" className="btn btn-outline-warning ms-5 ">
+                  Log out
+                </button>
+              ) : (
+                <button type="button" className="btn btn-outline-warning ms-5 ">
+                  <Link className="nav-link" to="/login">
+                    Log in
+                  </Link>
+                </button>
+              )}
             </ul>
           </div>
         </div>

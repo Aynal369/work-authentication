@@ -14,7 +14,8 @@ const Home = () => {
           <h5>Hello!</h5>
           <h2>{loggedInUser.name}</h2>
           <p>
-            This is your email <small>{loggedInUser.email}</small>
+            This is your email
+            <small>{loggedInUser.email}</small>
           </p>
         </section>
       </main>

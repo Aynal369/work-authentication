@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFacebook, faGoogle } from "@fortawesome/free-brands-svg-icons";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import { UserContext } from "../../App";
+import { useForm } from "react-hook-form";
 
 if (firebase.apps.length === 0) {
   firebase.initializeApp(firebaseConfig);
@@ -23,32 +24,34 @@ const SignupForm = () => {
     email: "",
     password: "",
   });
-  const handleSignup = (e) => {
-    console.log(e);
-    if (user.email && user.password) {
-      console.log("submitted");
-      firebase
-        .auth()
-        .createUserWithEmailAndPassword(user.email, user.password)
-        .then((res) => {
-          console.log(res);
-          const newUserInfo = { ...user };
-          newUserInfo.error = "";
-          newUserInfo.success = true;
-          setUser(newUserInfo);
-          updateUserName(user.name);
-          console.log(user.name);
-          history.replace(from);
-        })
-        .catch((error) => {
-          const newUserInfo = { ...user };
-          newUserInfo.error = error.message;
-          newUserInfo.success = false;
-          setUser(newUserInfo);
-        });
-    }
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-    e.preventDefault();
+  const onSubmit = (data) => {
+    console.log(data);
+    firebase
+      .auth()
+      .createUserWithEmailAndPassword(data.email, data.password)
+      .then((res) => {
+        console.log(res);
+        const { displayName, email } = res.user;
+        const signedInUser = {
+          isSignedIn: true,
+          name: displayName,
+          email: email,
+        };
+        setUser(signedInUser);
+        updateUserName(data.name);
+        console.log(data.name);
+        history.replace(from);
+      })
+      .catch((error) => {
+        console.log(error);
+        console.log(error.message);
+      });
   };
 
   const updateUserName = (name) => {
@@ -65,24 +68,7 @@ const SignupForm = () => {
       });
   };
 
-  // Form Validation
-  const handleBlur = (e) => {
-    let isFieldValid = true;
-    if (e.target.name === "email") {
-      isFieldValid = /\S+@\S+\.\S+/.test(e.target.value);
-    }
-    if (e.target.name === "password") {
-      const isPasswordValid = e.target.value.length > 6;
-      const passwordHasNumber = /\d{1}/.test(e.target.value);
-      isFieldValid = isPasswordValid && passwordHasNumber;
-    }
-    if (isFieldValid) {
-      const newUserInfo = { ...user };
-      newUserInfo[e.target.name] = e.target.value;
-      setUser(newUserInfo);
-    }
-  }; // Form Validation Close
-
+  // Google Authentication
   const handleGoogleAuth = () => {
     const googleProvider = new firebase.auth.GoogleAuthProvider();
     firebase
@@ -95,7 +81,6 @@ const SignupForm = () => {
           name: displayName,
           email: email,
         };
-        setUser(signedInUser);
         setLoggedInUser(signedInUser);
         history.replace(from);
       })
@@ -104,6 +89,7 @@ const SignupForm = () => {
         console.log(err.message);
       });
   };
+  // Facebook Authentication
   const handleFacebookAuth = () => {
     const facebookProvider = new firebase.auth.FacebookAuthProvider();
     firebase
@@ -116,7 +102,6 @@ const SignupForm = () => {
           name: displayName,
           email: email,
         };
-        setUser(signedInUser);
         setLoggedInUser(signedInUser);
         history.replace(from);
       })
@@ -133,36 +118,80 @@ const SignupForm = () => {
           <div className="col-sm-6 col-md-4">
             <div className="form_card round shadow-lg">
               <h3 className="text-dark mb-4">SignUp</h3>
-              <form onSubmit={handleSignup} className="w-75 p-2">
+              <form onSubmit={handleSubmit(onSubmit)} className="w-75 p-2">
                 <div className="mb-3">
                   <input
                     type="text"
+                    id="name"
                     name="name"
-                    onBlur={handleBlur}
+                    placeholder="Enter Your Name"
                     className="form-control rounded-pill"
-                    placeholder="Your name"
-                    required
+                    {...register("name", {
+                      required: "required",
+                      minLength: {
+                        value: 4,
+                        message: "min length is 4 characters",
+                      },
+                    })}
                   />
+                  {errors.name && (
+                    <span
+                      style={{ color: "red", fontSize: "12px" }}
+                      role="alert"
+                    >
+                      {errors.name.message}
+                    </span>
+                  )}
                 </div>
                 <div className="mb-3">
                   <input
-                    type="text"
+                    type="email"
+                    id="email"
                     name="email"
-                    onBlur={handleBlur}
+                    placeholder="name@example.com"
                     className="form-control rounded-pill"
-                    placeholder="Your Email address"
-                    required
+                    {...register("email", {
+                      required: "required",
+                      pattern: {
+                        value: /\S+@\S+\.\S+/,
+                        message: "Entered value does not match email format",
+                      },
+                    })}
                   />
+                  {errors.email && (
+                    <span
+                      style={{ color: "red", fontSize: "12px" }}
+                      role="alert"
+                    >
+                      {errors.email.message}
+                    </span>
+                  )}
                 </div>
                 <div className="mb-3">
                   <input
                     type="password"
+                    id="password"
                     name="password"
-                    onBlur={handleBlur}
+                    placeholder="H2Gi)mRp*vg^"
                     className="form-control rounded-pill"
-                    placeholder="Your Password"
-                    required
+                    {...register("password", {
+                      required: "required",
+                      pattern: {
+                        value:
+                          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{8,30}$/,
+                        message:
+                          "Password must be 8-30 characters. example:- number, uppercase, lowercase, special character)",
+                      },
+                    })}
                   />
+                  {errors.password && (
+                    <span
+                      style={{ color: "red", fontSize: "12px" }}
+                      role="alert"
+                    >
+                      {errors.password.message}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="submit"
